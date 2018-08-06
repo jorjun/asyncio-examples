@@ -1,14 +1,12 @@
 import asyncio
 
-@asyncio.coroutine
-def slow_operation(future):
-    yield from asyncio.sleep(1)
+async def slow_operation(future):
+    await asyncio.sleep(1)
     future.set_result(42)
 
-@asyncio.coroutine
-def call_slow_operation():
+async def call_slow_operation():
     fut = asyncio.Future()
-    yield from slow_operation(fut)
+    await slow_operation(fut)
     result = fut.result()
     print("The answer is: {}".format(result))
 
