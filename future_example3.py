@@ -3,14 +3,12 @@
 
 import asyncio
 
-@asyncio.coroutine
-def slow_operation():
-    yield from asyncio.sleep(1)
+async def slow_operation():
+    await asyncio.sleep(1)
     return 42
 
-@asyncio.coroutine
-def call_slow_operation():
-    result = yield from slow_operation()
+async def call_slow_operation():
+    result = await slow_operation()
     print("The answer is: {}".format(result))
 
 loop = asyncio.get_event_loop()
