@@ -4,18 +4,15 @@ call with the event loop, allowing infinite mutual recursion. """
 
 import asyncio
 
-@asyncio.coroutine
-def a(n):
+async def a(n):
     print("A: {}".format(n))
-    asyncio.async(b(n+1)) # asyncio.ensure_future in Python 3.4.4
+    asyncio.ensure_future(b(n+1))
 
-@asyncio.coroutine
-def b(n):
+async def b(n):
     print("B: {}".format(n))
-    asyncio.async(a(n+1)) # asyncio.ensure_future in Python 3.4.4
+    asyncio.ensure_future(a(n+1))
 
 loop = asyncio.get_event_loop()
-asyncio.async(a(0))
+asyncio.ensure_future(a(0))
 loop.run_forever()
 loop.close()
-
