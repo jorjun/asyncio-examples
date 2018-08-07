@@ -1,33 +1,32 @@
+"""
+Demonstrate async 'gather' vs 'as_completed'
+
+@jorjun Dies Martis, Sol in Leo, Luna in Gemini, An:Viv
+"""
 import asyncio
 
-@asyncio.coroutine
-def waitn(n):
-    asyncio.sleep(n)
-    return "I waited {}".format(n)
+async def waitn(n):
+    await asyncio.sleep(n)
+    return f"I waited {n}"
 
-@asyncio.coroutine
-def run_parallel():
-    # Results will be in order called
-    results = yield from asyncio.gather(waitn(3), waitn(1), waitn(2))
-    print("Results: {}".format(results))
+async def task_gathered():
+    # Results will be delivered in order of call
+    results = await asyncio.gather(
+        waitn(3), waitn(0), waitn(1)
+    )
+    print(f"Gathered: {results}")
 
-@asyncio.coroutine
-def run_parallel2():
-    tasks = [waitn(i) for i in (3,1,2)]
-    # Results will be in order called
-    results = yield from asyncio.gather(*tasks)
-    print("Results2: {}".format(results))
 
-@asyncio.coroutine
-def run_parallel3():
-    tasks = [asyncio.async(waitn(i)) for i in (3,1,2)]
-    done, pending = yield from asyncio.wait(tasks)
-    # Results will NOT necessarily be in the order called
-    results = [future.result() for future in done]
-    print("Results3: {}".format(results))
+async def task_as_complete():
+    tasks = [waitn(i) for i in (3, 0, 1)]
+    for result in  asyncio.as_completed(tasks):
+        print(f"As completed: {await result}")
 
 loop = asyncio.get_event_loop()
-loop.run_until_complete(run_parallel())
-loop.run_until_complete(run_parallel2())
-loop.run_until_complete(run_parallel3())
+print("First gathered results:-", end="\n\n")
+loop.run_until_complete(task_gathered())
+print("-" * 60)
+print("Now as-completed results:-", end="\n\n")
+loop.run_until_complete(task_as_complete())
+print("-- END --")
 loop.close()
