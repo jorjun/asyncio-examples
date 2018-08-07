@@ -1,33 +1,39 @@
-""" Downloads a few web pages in parallel, and counts how many times a specified
-word is used in each of them. """
+"""
+Download web pages in parallel, count how many times a specified
+word is used in each of them. And time taken.
+"""
 
 import asyncio
 import aiohttp
+from datetime import datetime
 
-@asyncio.coroutine
-def download_and_count_word(word, url):
-    response = yield from aiohttp.request('GET', url)
-    text = yield from response.read()
-    return text.decode().count(word)
+async def download_and_count_word(word, url):
+    t_start = datetime.utcnow()
+    async with aiohttp.request('GET', url) as response:
+        text = await response.read()
+        return {
+            "dur_s": (datetime.utcnow() - t_start).total_seconds(),
+            "url": url,
+            "count": text.decode().lower().count(word)
+        }
 
-@asyncio.coroutine
-def count_word_in_pages(word, urls):
-    tasks = [download_and_count_word(word, url) for url in urls]
-    counts = yield from asyncio.gather(*tasks)
 
-    for i in range(len(urls)):
-        url = urls[i]
-        count = counts[i]
-        print("{} appears {} times in {}".format(word, count, url))
+async def count_word_in_pages(word, urls):
+    for done in asyncio.as_completed(
+        [download_and_count_word(word, url) for url in urls]
+    ):
+        data = await done
+        print(f"{word!r} appears {data['count']} times in {data['url']}. ({data['dur_s']} seconds)")
 
-word = "the"
-pages = ["http://calebmadrigal.com",
+word = "will"
+urls = ["http://calebmadrigal.com",
          "http://yahoo.com",
          "http://xkcd.com",
          "http://reddit.com",
-         "http://news.ycombinator.com"]
+         "http://news.ycombinator.com",
+         "https://nuyidao.com/about/"]
 
 loop = asyncio.get_event_loop()
-loop.run_until_complete(count_word_in_pages(word, pages))
+loop.run_until_complete(count_word_in_pages(word, urls))
 loop.close()
 
