@@ -1,46 +1,43 @@
+"""
+Demonstrate ThreadPoolExecutor with N worker threads to deal with a blocking function.
+
+@jorjun  Dies Martis, Sol in Leo, Luna in Gemini, An:Viv
+
+"""
 import asyncio
 import time
 import random
 import urllib.request
+import concurrent.futures
+from contextvars import ContextVar
 
 RAND_VARIATION = 5
 URL = 'http://xkcd.com'
 
 
-# Blocking HTTP GET
-def download_url(url):
-    return urllib.request.urlopen(url).read()
+async def worker_loop(executor, hostid, interval, count):
+
+    def blocking_download_url(url):
+        return urllib.request.urlopen(url).read()
 
 
-@asyncio.coroutine
-def worker_loop(hostid, interval):
-    count = 0
-    while True:
-        count += 1
-        print("Agent {} - loop count: {}".format(hostid, count))
+    for lcount in range(1, count+1):
+        await asyncio.sleep(interval + random.randint(0, RAND_VARIATION))
+        result = await loop.run_in_executor(executor, blocking_download_url, URL)
+        print(f"Agent: {hostid}, loop: {lcount}, got data len: {len(result)}")
 
-        # Call download_url in the thread pool.
-        loop = asyncio.get_event_loop()
-        fut = loop.run_in_executor(None, download_url, URL)
-        result = yield from fut
-        print("Agent {} Got data len: {}".format(hostid, len(result)))
+    print(f'Agent: {hostid} finished!')
 
-        yield from asyncio.sleep(interval + random.randint(0, RAND_VARIATION))
-
-
-@asyncio.coroutine
-def run_agents():
-    num_agents = 5
-    interval = 10
-    all_agents = [worker_loop(i, interval) for i in range(1, num_agents+1)]
-    yield from asyncio.gather(*all_agents)
-    
-
-def main():
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(run_agents())
-    loop.close()
 
 if __name__ == '__main__':
-    main()
-
+    loop = asyncio.get_event_loop()
+    num_agents = 3
+    with concurrent.futures.ThreadPoolExecutor(
+        max_workers=num_agents
+    ) as executor:
+        all_agents = [worker_loop(executor=executor, hostid=hostid, interval=5, count=3)
+                      for hostid in range(1, num_agents + 1)]
+        loop.run_until_complete(
+            asyncio.gather(*all_agents)
+        )
+        loop.close()
