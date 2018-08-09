@@ -5,14 +5,13 @@ word is used in each of them. And time taken.
 
 import asyncio
 import aiohttp
-from datetime import datetime
 
 async def download_and_count_word(word, url):
-    t_start = datetime.utcnow()
+    t_start = loop.time()
     async with aiohttp.request('GET', url) as response:
         text = await response.read()
         return {
-            "dur_s": (datetime.utcnow() - t_start).total_seconds(),
+            "dur_s": (loop.time() - t_start),
             "url": url,
             "count": text.decode().lower().count(word)
         }
@@ -23,7 +22,7 @@ async def count_word_in_pages(word, urls):
         [download_and_count_word(word, url) for url in urls]
     ):
         data = await done
-        print(f"{word!r} appears {data['count']} times in {data['url']}. ({data['dur_s']} seconds)")
+        print(f"{word!r} appears {data['count']} times in {data['url']}. ({data['dur_s']:.2} seconds)")
 
 word = "will"
 urls = ["http://calebmadrigal.com",
