@@ -13,7 +13,5 @@ async def call_slow_operation():
     fut.add_done_callback(future_callback)
     await slow_operation(fut)
 
-loop = asyncio.get_event_loop()
-loop.run_until_complete(call_slow_operation())
-loop.close()
+asyncio.run(call_slow_operation())
 
